@@ -22,7 +22,7 @@ export default ((opts?: Partial<TagContentOptions>) => {
   const options: TagContentOptions = { ...defaultOptions, ...opts }
 
   const TagContent: QuartzComponent = (props: QuartzComponentProps) => {
-    const { tree, fileData, allFiles, cfg } = props
+    const { tree, fileData, allFiles } = props
     const slug = fileData.slug
 
     if (!(slug?.startsWith("tags/") || slug === "tags")) {
@@ -57,7 +57,7 @@ export default ((opts?: Partial<TagContentOptions>) => {
           <article class={classes}>
             <p>{content}</p>
           </article>
-          <p>{i18n(cfg.locale).pages.tagContent.totalTags({ count: tags.length })}</p>
+          <p>{i18n("en-US").pages.tagContent.totalTags({ count: tags.length })}</p>
           <div>
             {tags.map((tag) => {
               const pages = tagItemMap.get(tag)!
@@ -87,12 +87,12 @@ export default ((opts?: Partial<TagContentOptions>) => {
                   {content && <p>{content}</p>}
                   <div class="page-listing">
                     <p>
-                      {i18n(cfg.locale).pages.tagContent.itemsUnderTag({ count: pages.length })}
+                      {i18n("en-US").pages.tagContent.itemsUnderTag({ count: pages.length })}
                       {pages.length > options.numPages && (
                         <>
                           {" "}
                           <span>
-                            {i18n(cfg.locale).pages.tagContent.showingFirst({
+                            {i18n("en-US").pages.tagContent.showingFirst({
                               count: options.numPages,
                             })}
                           </span>
@@ -118,7 +118,7 @@ export default ((opts?: Partial<TagContentOptions>) => {
         <div class="popover-hint">
           <article class={classes}>{content}</article>
           <div class="page-listing">
-            <p>{i18n(cfg.locale).pages.tagContent.itemsUnderTag({ count: pages.length })}</p>
+            <p>{i18n("en-US").pages.tagContent.itemsUnderTag({ count: pages.length })}</p>
             <div>
               <PageList {...listProps} sort={options?.sort} />
             </div>

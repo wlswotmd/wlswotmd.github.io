@@ -32,15 +32,31 @@ export default ((userOpts?: Partial<Options>) => {
     displayClass,
     cfg,
   }: QuartzComponentProps) => {
+    const recentTitleEn = i18n("en-US").components.recentNotes.title
+    const recentTitleKo = i18n("ko-KR").components.recentNotes.title
     const opts = { ...defaultOptions(cfg), ...userOpts }
     const pages = allFiles.filter(opts.filter).sort(opts.sort)
     const remaining = Math.max(0, pages.length - opts.limit)
     return (
       <div class={classNames(displayClass, "recent-notes")}>
-        <h3>{opts.title ?? i18n(cfg.locale).components.recentNotes.title}</h3>
+        <h3>
+          {opts.title ? (
+            opts.title
+          ) : (
+            <>
+              <span class="lang-text" data-lang="en">
+                {recentTitleEn}
+              </span>
+              <span class="lang-text" data-lang="ko">
+                {recentTitleKo}
+              </span>
+            </>
+          )}
+        </h3>
         <ul class="recent-ul">
           {pages.slice(0, opts.limit).map((page) => {
             const title = page.frontmatter?.title ?? i18n(cfg.locale).propertyDefaults.title
+            const titleKo = page.frontmatter?.title_ko
             const tags = page.frontmatter?.tags ?? []
 
             return (
@@ -49,7 +65,18 @@ export default ((userOpts?: Partial<Options>) => {
                   <div class="desc">
                     <h3>
                       <a href={resolveRelative(fileData.slug!, page.slug!)} class="internal">
-                        {title}
+                        {titleKo ? (
+                          <>
+                            <span class="lang-title" data-lang="en">
+                              {title}
+                            </span>
+                            <span class="lang-title" data-lang="ko">
+                              {titleKo}
+                            </span>
+                          </>
+                        ) : (
+                          title
+                        )}
                       </a>
                     </h3>
                   </div>
@@ -80,7 +107,12 @@ export default ((userOpts?: Partial<Options>) => {
         {opts.linkToMore && remaining > 0 && (
           <p>
             <a href={resolveRelative(fileData.slug!, opts.linkToMore)}>
-              {i18n(cfg.locale).components.recentNotes.seeRemainingMore({ remaining })}
+              <span class="lang-text" data-lang="en">
+                {i18n("en-US").components.recentNotes.seeRemainingMore({ remaining })}
+              </span>
+              <span class="lang-text" data-lang="ko">
+                {i18n("ko-KR").components.recentNotes.seeRemainingMore({ remaining })}
+              </span>
             </a>
           </p>
         )}

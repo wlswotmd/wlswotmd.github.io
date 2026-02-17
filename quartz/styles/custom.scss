@@ -1,3 +1,79 @@
 @use "./base.scss";
 
 // put your custom CSS here!
+
+html[data-lang="en"] .lang-block[data-lang="ko"],
+html[data-lang="ko"] .lang-block[data-lang="en"] {
+  display: none;
+}
+
+html[data-lang="en"] pre[data-lang="ko"],
+html[data-lang="ko"] pre[data-lang="en"] {
+  display: none;
+}
+
+.lang-block {
+  margin: 0;
+}
+
+.lang-marker {
+  display: none;
+}
+
+lang-ko,
+lang-en {
+  display: none;
+}
+
+p:has(> .lang-marker:only-child) {
+  display: none;
+}
+
+.lang-warning {
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--lightgray);
+  border-left: 3px solid var(--secondary);
+  border-radius: 6px;
+  background-color: var(--light);
+  color: var(--darkgray);
+  font-size: 0.95rem;
+}
+
+html[data-lang-fallback="en"] .lang-block[data-lang="en"],
+html[data-lang-fallback="ko"] .lang-block[data-lang="ko"] {
+  display: block;
+}
+
+html[data-lang-fallback="en"] .lang-block[data-lang="ko"],
+html[data-lang-fallback="ko"] .lang-block[data-lang="en"] {
+  display: none;
+}
+
+html[data-lang-fallback="en"] pre[data-lang="en"],
+html[data-lang-fallback="ko"] pre[data-lang="ko"] {
+  display: block;
+}
+
+html[data-lang-fallback="en"] pre[data-lang="ko"],
+html[data-lang-fallback="ko"] pre[data-lang="en"] {
+  display: none;
+}
+
+.lang-title {
+  display: none;
+}
+
+html[data-lang="en"] .lang-title[data-lang="en"],
+html[data-lang="ko"] .lang-title[data-lang="ko"] {
+  display: inline;
+}
+
+.lang-text {
+  display: none;
+}
+
+html[data-lang="en"] .lang-text[data-lang="en"],
+html[data-lang="ko"] .lang-text[data-lang="ko"] {
+  display: inline;
+}

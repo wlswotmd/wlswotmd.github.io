@@ -60,9 +60,10 @@ export default ((userOpts?: Partial<Options>) => {
   const opts: Options = { ...defaultOptions, ...userOpts }
   const { OverflowList, overflowListAfterDOMLoaded } = OverflowListFactory()
 
-  const Explorer: QuartzComponent = ({ cfg, displayClass }: QuartzComponentProps) => {
+  const Explorer: QuartzComponent = ({ displayClass }: QuartzComponentProps) => {
+    const explorerTitleEn = i18n("en-US").components.explorer.title
+    const explorerTitleKo = i18n("ko-KR").components.explorer.title
     const id = `explorer-${numExplorers++}`
-
     return (
       <div
         class={classNames(displayClass, "explorer")}
@@ -103,7 +104,20 @@ export default ((userOpts?: Partial<Options>) => {
           data-mobile={false}
           aria-expanded={true}
         >
-          <h2>{opts.title ?? i18n(cfg.locale).components.explorer.title}</h2>
+          <h2>
+            {opts.title ? (
+              opts.title
+            ) : (
+              <>
+                <span class="lang-text" data-lang="en">
+                  {explorerTitleEn}
+                </span>
+                <span class="lang-text" data-lang="ko">
+                  {explorerTitleKo}
+                </span>
+              </>
+            )}
+          </h2>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="14"

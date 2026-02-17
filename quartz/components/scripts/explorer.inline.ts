@@ -20,6 +20,19 @@ type FolderState = {
 }
 
 let currentExplorerState: Array<FolderState>
+
+function getPreferredLang(): "en" | "ko" {
+  const params = new URLSearchParams(window.location.search)
+  const raw = (params.get("hl") ?? "").toLowerCase()
+  return raw.startsWith("ko") ? "ko" : "en"
+}
+
+function withLangQuery(path: string): string {
+  const url = new URL(path, window.location.toString())
+  url.searchParams.set("hl", getPreferredLang())
+  return `${url.pathname}${url.search}${url.hash}`
+}
+
 function toggleExplorer(this: HTMLElement) {
   const nearestExplorer = this.closest(".explorer") as HTMLElement
   if (!nearestExplorer) return
@@ -84,7 +97,7 @@ function createFileNode(currentSlug: FullSlug, node: FileTrieNode): HTMLLIElemen
   const clone = template.content.cloneNode(true) as DocumentFragment
   const li = clone.querySelector("li") as HTMLLIElement
   const a = li.querySelector("a") as HTMLAnchorElement
-  a.href = resolveRelative(currentSlug, node.slug)
+  a.href = withLangQuery(resolveRelative(currentSlug, node.slug))
   a.dataset.for = node.slug
   a.textContent = node.displayName
 
@@ -119,7 +132,7 @@ function createFolderNode(
     // Replace button with link for link behavior
     const button = titleContainer.querySelector(".folder-button") as HTMLElement
     const a = document.createElement("a")
-    a.href = resolveRelative(currentSlug, folderPath)
+    a.href = withLangQuery(resolveRelative(currentSlug, folderPath))
     a.dataset.for = folderPath
     a.className = "folder-title"
     a.textContent = node.displayName
@@ -178,7 +191,12 @@ async function setupExplorer(currentSlug: FullSlug) {
 
     const data = await fetchData
     const entries = [...Object.entries(data)] as [FullSlug, ContentDetails][]
-    const trie = FileTrieNode.fromEntries(entries)
+    const lang = getPreferredLang()
+    const localizedEntries = entries.map(([slug, content]) => {
+      const title = lang === "ko" ? (content.title_ko ?? content.title) : content.title
+      return [slug, { ...content, title }] as [FullSlug, ContentDetails]
+    })
+    const trie = FileTrieNode.fromEntries(localizedEntries)
 
     // Apply functions in order
     for (const fn of opts.order) {

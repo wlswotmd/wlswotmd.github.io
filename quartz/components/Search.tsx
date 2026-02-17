@@ -17,6 +17,10 @@ export default ((userOpts?: Partial<SearchOptions>) => {
   const Search: QuartzComponent = ({ displayClass, cfg }: QuartzComponentProps) => {
     const opts = { ...defaultOptions, ...userOpts }
     const searchPlaceholder = i18n(cfg.locale).components.search.searchBarPlaceholder
+    const searchPlaceholderEn = i18n("en-US").components.search.searchBarPlaceholder
+    const searchPlaceholderKo = i18n("ko-KR").components.search.searchBarPlaceholder
+    const searchTitleEn = i18n("en-US").components.search.title
+    const searchTitleKo = i18n("ko-KR").components.search.title
     return (
       <div class={classNames(displayClass, "search")}>
         <button class="search-button">
@@ -27,7 +31,14 @@ export default ((userOpts?: Partial<SearchOptions>) => {
               <circle cx="8" cy="8" r="7" />
             </g>
           </svg>
-          <p>{i18n(cfg.locale).components.search.title}</p>
+          <p>
+            <span class="lang-text" data-lang="en">
+              {searchTitleEn}
+            </span>
+            <span class="lang-text" data-lang="ko">
+              {searchTitleKo}
+            </span>
+          </p>
         </button>
         <div class="search-container">
           <div class="search-space">
@@ -38,6 +49,8 @@ export default ((userOpts?: Partial<SearchOptions>) => {
               type="text"
               aria-label={searchPlaceholder}
               placeholder={searchPlaceholder}
+              data-placeholder-en={searchPlaceholderEn}
+              data-placeholder-ko={searchPlaceholderKo}
             />
             <div class="search-layout" data-preview={opts.enablePreview}></div>
           </div>

@@ -8,7 +8,7 @@ import { clone } from "../util/clone"
 import { visit } from "unist-util-visit"
 import { Root, Element, ElementContent } from "hast"
 import { GlobalConfiguration } from "../cfg"
-import { i18n } from "../i18n"
+import { i18n, ValidLocale } from "../i18n"
 import { styleText } from "util"
 
 interface RenderComponents {
@@ -219,14 +219,33 @@ export function renderPage(
   components: RenderComponents,
   pageResources: StaticResources,
 ): string {
+  const resolveLocale = (input?: string): ValidLocale | undefined => {
+    if (!input) return undefined
+    const lower = input.toLowerCase()
+    if (lower.startsWith("ko")) return "ko-KR"
+    if (lower.startsWith("en")) return "en-US"
+    return undefined
+  }
+
+  const inferLocale = (): ValidLocale | undefined => {
+    const fmLang = resolveLocale(componentData.fileData.frontmatter?.lang as string | undefined)
+    if (fmLang) return fmLang
+    const slugPrefix = componentData.fileData.slug?.split("/")[0]
+    return resolveLocale(slugPrefix)
+  }
+
+  const inferredLocale = inferLocale()
+  const pageCfg = inferredLocale ? { ...cfg, locale: inferredLocale } : cfg
+  const pageComponentData: QuartzComponentProps = { ...componentData, cfg: pageCfg }
+
   // make a deep copy of the tree so we don't remove the transclusion references
   // for the file cached in contentMap in build.ts
-  const root = clone(componentData.tree) as Root
+  const root = clone(pageComponentData.tree) as Root
   const visited = new Set<FullSlug>([slug])
-  renderTranscludes(root, cfg, slug, componentData, visited)
+  renderTranscludes(root, pageCfg, slug, pageComponentData, visited)
 
   // set componentData.tree to the edited html that has transclusions rendered
-  componentData.tree = root
+  pageComponentData.tree = root
 
   const {
     head: Head,
@@ -244,7 +263,7 @@ export function renderPage(
   const LeftComponent = (
     <div class="left sidebar">
       {left.map((BodyComponent) => (
-        <BodyComponent {...componentData} />
+        <BodyComponent {...pageComponentData} />
       ))}
     </div>
   )
@@ -252,43 +271,43 @@ export function renderPage(
   const RightComponent = (
     <div class="right sidebar">
       {right.map((BodyComponent) => (
-        <BodyComponent {...componentData} />
+        <BodyComponent {...pageComponentData} />
       ))}
     </div>
   )
 
-  const lang = componentData.fileData.frontmatter?.lang ?? cfg.locale?.split("-")[0] ?? "en"
-  const direction = i18n(cfg.locale).direction ?? "ltr"
+  const lang = pageComponentData.fileData.frontmatter?.lang ?? pageCfg.locale?.split("-")[0] ?? "en"
+  const direction = i18n(pageCfg.locale).direction ?? "ltr"
   const doc = (
-    <html lang={lang} dir={direction}>
-      <Head {...componentData} />
+    <html lang={lang} dir={direction} data-lang={lang}>
+      <Head {...pageComponentData} />
       <body data-slug={slug}>
         <div id="quartz-root" class="page">
-          <Body {...componentData}>
+          <Body {...pageComponentData}>
             {LeftComponent}
             <div class="center">
               <div class="page-header">
-                <Header {...componentData}>
+                <Header {...pageComponentData}>
                   {header.map((HeaderComponent) => (
-                    <HeaderComponent {...componentData} />
+                    <HeaderComponent {...pageComponentData} />
                   ))}
                 </Header>
                 <div class="popover-hint">
                   {beforeBody.map((BodyComponent) => (
-                    <BodyComponent {...componentData} />
+                    <BodyComponent {...pageComponentData} />
                   ))}
                 </div>
               </div>
-              <Content {...componentData} />
+              <Content {...pageComponentData} />
               <hr />
               <div class="page-footer">
                 {afterBody.map((BodyComponent) => (
-                  <BodyComponent {...componentData} />
+                  <BodyComponent {...pageComponentData} />
                 ))}
               </div>
             </div>
             {RightComponent}
-            <Footer {...componentData} />
+            <Footer {...pageComponentData} />
           </Body>
         </div>
       </body>

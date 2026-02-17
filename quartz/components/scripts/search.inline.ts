@@ -7,6 +7,7 @@ interface Item {
   id: number
   slug: FullSlug
   title: string
+  title_ko?: string
   content: string
   tags: string[]
   [key: string]: any
@@ -69,6 +70,10 @@ let index = new FlexSearch.Document<Item>({
     index: [
       {
         field: "title",
+        tokenize: "forward",
+      },
+      {
+        field: "title_ko",
         tokenize: "forward",
       },
       {
@@ -307,12 +312,20 @@ async function setupSearch(searchElement: Element, currentSlug: FullSlug, data: 
     }
   }
 
+  const getLang = () => {
+    const params = new URLSearchParams(window.location.search)
+    const raw = (params.get("hl") ?? "").toLowerCase()
+    return raw.startsWith("ko") ? "ko" : "en"
+  }
+
   const formatForDisplay = (term: string, id: number) => {
     const slug = idDataMap[id]
+    const lang = getLang()
+    const title = lang === "ko" ? (data[slug].title_ko ?? data[slug].title) : data[slug].title
     return {
       id,
       slug,
-      title: searchType === "tags" ? data[slug].title : highlight(term, data[slug].title ?? ""),
+      title: searchType === "tags" ? title : highlight(term, title ?? data[slug].title ?? ""),
       content: highlight(term, data[slug].content ?? "", true),
       tags: highlightTags(term.substring(1), data[slug].tags),
     }
@@ -335,7 +348,9 @@ async function setupSearch(searchElement: Element, currentSlug: FullSlug, data: 
   }
 
   function resolveUrl(slug: FullSlug): URL {
-    return new URL(resolveRelative(currentSlug, slug), location.toString())
+    const url = new URL(resolveRelative(currentSlug, slug), location.toString())
+    url.searchParams.set("hl", getLang())
+    return url
   }
 
   const resultToHTML = ({ slug, title, content, tags }: Item) => {
@@ -376,9 +391,13 @@ async function setupSearch(searchElement: Element, currentSlug: FullSlug, data: 
   async function displayResults(finalResults: Item[]) {
     removeAllChildren(results)
     if (finalResults.length === 0) {
+      const lang = getLang()
+      const noResultsTitle = lang === "ko" ? "결과가 없습니다." : "No results."
+      const noResultsHint =
+        lang === "ko" ? "다른 검색어를 시도해보세요." : "Try another search term?"
       results.innerHTML = `<a class="result-card no-match">
-          <h3>No results.</h3>
-          <p>Try another search term?</p>
+          <h3>${noResultsTitle}</h3>
+          <p>${noResultsHint}</p>
       </a>`
     } else {
       results.append(...finalResults.map(resultToHTML))
@@ -427,6 +446,10 @@ async function setupSearch(searchElement: Element, currentSlug: FullSlug, data: 
     previewInner.classList.add("preview-inner")
     previewInner.append(...innerDiv)
     preview.replaceChildren(previewInner)
+    const refreshEvent: CustomEventMap["language-refresh"] = new CustomEvent("language-refresh", {
+      detail: {},
+    })
+    document.dispatchEvent(refreshEvent)
 
     // scroll to longest
     const highlights = [...preview.getElementsByClassName("highlight")].sort(
@@ -520,6 +543,7 @@ async function fillDocument(data: ContentIndex) {
         id,
         slug: slug as FullSlug,
         title: fileData.title,
+        title_ko: fileData.title_ko ?? fileData.title,
         content: fileData.content,
         tags: fileData.tags,
       }),

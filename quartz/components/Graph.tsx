@@ -60,15 +60,29 @@ const defaultOptions: GraphOptions = {
 }
 
 export default ((opts?: Partial<GraphOptions>) => {
-  const Graph: QuartzComponent = ({ displayClass, cfg }: QuartzComponentProps) => {
+  const Graph: QuartzComponent = ({ displayClass }: QuartzComponentProps) => {
+    const graphTitleEn = i18n("en-US").components.graph.title
+    const graphTitleKo = i18n("ko-KR").components.graph.title
     const localGraph = { ...defaultOptions.localGraph, ...opts?.localGraph }
     const globalGraph = { ...defaultOptions.globalGraph, ...opts?.globalGraph }
     return (
       <div class={classNames(displayClass, "graph")}>
-        <h3>{i18n(cfg.locale).components.graph.title}</h3>
+        <h3>
+          <span class="lang-text" data-lang="en">
+            {graphTitleEn}
+          </span>
+          <span class="lang-text" data-lang="ko">
+            {graphTitleKo}
+          </span>
+        </h3>
         <div class="graph-outer">
           <div class="graph-container" data-cfg={JSON.stringify(localGraph)}></div>
-          <button class="global-graph-icon" aria-label="Global Graph">
+          <button
+            class="global-graph-icon"
+            aria-label="Global Graph"
+            data-label-en="Global Graph"
+            data-label-ko="전체 그래프"
+          >
             <svg
               version="1.1"
               xmlns="http://www.w3.org/2000/svg"

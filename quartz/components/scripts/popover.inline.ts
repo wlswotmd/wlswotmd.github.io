@@ -28,6 +28,10 @@ async function mouseEnterHandler(
     clearActivePopover()
     popoverElement.classList.add("active-popover")
     setPosition(popoverElement as HTMLElement)
+    const refreshEvent: CustomEventMap["language-refresh"] = new CustomEvent("language-refresh", {
+      detail: {},
+    })
+    document.dispatchEvent(refreshEvent)
 
     if (hash !== "") {
       const targetAnchor = `#popover-internal-${hash.slice(1)}`

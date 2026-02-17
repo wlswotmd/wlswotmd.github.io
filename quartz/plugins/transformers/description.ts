@@ -19,6 +19,9 @@ const urlRegex = new RegExp(
   /(https?:\/\/)?(?<domain>([\da-z\.-]+)\.([a-z\.]{2,6})(:\d+)?)(?<path>[\/\w\.-]*)(\?[\/\w\.=&;-]*)?/,
   "g",
 )
+const langMarkerRegex = /(^|\s)\[(?:lang:)?(?:ko|en)\](?=\s|$)/gi
+
+const stripLangMarkers = (input: string): string => input.replace(langMarkerRegex, "$1")
 
 export const Description: QuartzTransformerPlugin<Partial<Options>> = (userOpts) => {
   const opts = { ...defaultOptions, ...userOpts }
@@ -29,7 +32,7 @@ export const Description: QuartzTransformerPlugin<Partial<Options>> = (userOpts)
         () => {
           return async (tree: HTMLRoot, file) => {
             let frontMatterDescription = file.data.frontmatter?.description
-            let text = escapeHTML(toString(tree))
+            let text = stripLangMarkers(escapeHTML(toString(tree)))
 
             if (opts.replaceExternalLinks) {
               frontMatterDescription = frontMatterDescription?.replace(

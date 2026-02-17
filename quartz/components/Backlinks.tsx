@@ -21,8 +21,11 @@ export default ((opts?: Partial<BacklinksOptions>) => {
     fileData,
     allFiles,
     displayClass,
-    cfg,
   }: QuartzComponentProps) => {
+    const backlinksTitleEn = i18n("en-US").components.backlinks.title
+    const backlinksTitleKo = i18n("ko-KR").components.backlinks.title
+    const noBacklinksEn = i18n("en-US").components.backlinks.noBacklinksFound
+    const noBacklinksKo = i18n("ko-KR").components.backlinks.noBacklinksFound
     const slug = simplifySlug(fileData.slug!)
     const backlinkFiles = allFiles.filter((file) => file.links?.includes(slug))
     if (options.hideWhenEmpty && backlinkFiles.length == 0) {
@@ -30,18 +33,43 @@ export default ((opts?: Partial<BacklinksOptions>) => {
     }
     return (
       <div class={classNames(displayClass, "backlinks")}>
-        <h3>{i18n(cfg.locale).components.backlinks.title}</h3>
+        <h3>
+          <span class="lang-text" data-lang="en">
+            {backlinksTitleEn}
+          </span>
+          <span class="lang-text" data-lang="ko">
+            {backlinksTitleKo}
+          </span>
+        </h3>
         <OverflowList>
           {backlinkFiles.length > 0 ? (
             backlinkFiles.map((f) => (
               <li>
                 <a href={resolveRelative(fileData.slug!, f.slug!)} class="internal">
-                  {f.frontmatter?.title}
+                  {f.frontmatter?.title_ko ? (
+                    <>
+                      <span class="lang-title" data-lang="en">
+                        {f.frontmatter?.title}
+                      </span>
+                      <span class="lang-title" data-lang="ko">
+                        {f.frontmatter?.title_ko}
+                      </span>
+                    </>
+                  ) : (
+                    f.frontmatter?.title
+                  )}
                 </a>
               </li>
             ))
           ) : (
-            <li>{i18n(cfg.locale).components.backlinks.noBacklinksFound}</li>
+            <li>
+              <span class="lang-text" data-lang="en">
+                {noBacklinksEn}
+              </span>
+              <span class="lang-text" data-lang="ko">
+                {noBacklinksKo}
+              </span>
+            </li>
           )}
         </OverflowList>
       </div>

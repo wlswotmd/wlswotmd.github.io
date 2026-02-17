@@ -13,6 +13,7 @@ export type ContentDetails = {
   slug: FullSlug
   filePath: FilePath
   title: string
+  title_ko?: string
   links: SimpleSlug[]
   tags: string[]
   content: string
@@ -38,6 +39,9 @@ const defaultOptions: Options = {
   rssSlug: "index",
   includeEmptyFiles: true,
 }
+
+const langMarkerRegex = /(^|\s)\[(?:lang:)?(?:ko|en)\](?=\s|$)/gi
+const stripLangMarkers = (input: string): string => input.replace(langMarkerRegex, "$1")
 
 function generateSiteMap(cfg: GlobalConfiguration, idx: ContentIndexMap): string {
   const base = cfg.baseUrl ?? ""
@@ -107,14 +111,15 @@ export const ContentIndex: QuartzEmitterPlugin<Partial<Options>> = (opts) => {
             slug,
             filePath: file.data.relativePath!,
             title: file.data.frontmatter?.title!,
+            title_ko: file.data.frontmatter?.title_ko,
             links: file.data.links ?? [],
             tags: file.data.frontmatter?.tags ?? [],
-            content: file.data.text ?? "",
+            content: stripLangMarkers(file.data.text ?? ""),
             richContent: opts?.rssFullHtml
               ? escapeHTML(toHtml(tree as Root, { allowDangerousHtml: true }))
               : undefined,
             date: date,
-            description: file.data.description ?? "",
+            description: stripLangMarkers(file.data.description ?? ""),
           })
         }
       }

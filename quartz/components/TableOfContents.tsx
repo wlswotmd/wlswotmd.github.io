@@ -21,11 +21,9 @@ let numTocs = 0
 export default ((opts?: Partial<Options>) => {
   const layout = opts?.layout ?? defaultOptions.layout
   const { OverflowList, overflowListAfterDOMLoaded } = OverflowListFactory()
-  const TableOfContents: QuartzComponent = ({
-    fileData,
-    displayClass,
-    cfg,
-  }: QuartzComponentProps) => {
+  const TableOfContents: QuartzComponent = ({ fileData, displayClass }: QuartzComponentProps) => {
+    const tocTitleEn = i18n("en-US").components.tableOfContents.title
+    const tocTitleKo = i18n("ko-KR").components.tableOfContents.title
     if (!fileData.toc) {
       return null
     }
@@ -39,7 +37,14 @@ export default ((opts?: Partial<Options>) => {
           aria-controls={id}
           aria-expanded={!fileData.collapseToc}
         >
-          <h3>{i18n(cfg.locale).components.tableOfContents.title}</h3>
+          <h3>
+            <span class="lang-text" data-lang="en">
+              {tocTitleEn}
+            </span>
+            <span class="lang-text" data-lang="ko">
+              {tocTitleKo}
+            </span>
+          </h3>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="24"
@@ -74,14 +79,23 @@ export default ((opts?: Partial<Options>) => {
   TableOfContents.css = modernStyle
   TableOfContents.afterDOMLoaded = concatenateResources(script, overflowListAfterDOMLoaded)
 
-  const LegacyTableOfContents: QuartzComponent = ({ fileData, cfg }: QuartzComponentProps) => {
+  const LegacyTableOfContents: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
+    const tocTitleEn = i18n("en-US").components.tableOfContents.title
+    const tocTitleKo = i18n("ko-KR").components.tableOfContents.title
     if (!fileData.toc) {
       return null
     }
     return (
       <details class="toc" open={!fileData.collapseToc}>
         <summary>
-          <h3>{i18n(cfg.locale).components.tableOfContents.title}</h3>
+          <h3>
+            <span class="lang-text" data-lang="en">
+              {tocTitleEn}
+            </span>
+            <span class="lang-text" data-lang="ko">
+              {tocTitleKo}
+            </span>
+          </h3>
         </summary>
         <ul>
           {fileData.toc.map((tocEntry) => (
