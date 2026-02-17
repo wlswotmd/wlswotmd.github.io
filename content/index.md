@@ -4,6 +4,7 @@ title_ko: About Me
 lang: en
 date: 2026-02-18
 draft: false
+comments: false
 ---
 [lang:ko]
 안녕하세요, 송준현입니다.
