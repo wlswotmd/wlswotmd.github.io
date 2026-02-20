@@ -14,7 +14,7 @@ comments: false
 2024년 [PKSecurity](http://home.pksecurity.io/)에 입사해 현재까지 Android / Linux kernel 보안을 연구하고 있습니다.
 
 [lang:en]
-Hello, I am Junhyeon Song.
+Hello, I'm Junhyeon Song.
 
 Since joining [CyKor](https://blog.cykor.kr), the hacking club at [Korea University](http://korea.ac.kr/), in 2021, I have been actively competing in CTFs, primarily focusing on pwnable challenges.
 

@@ -1,6 +1,23 @@
 @use "./base.scss";
 
 // put your custom CSS here!
+@font-face {
+  font-family: "Hack";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("https://cdn.jsdelivr.net/npm/hack-font@3.3.0/build/web/fonts/hack-regular-subset.woff2")
+    format("woff2");
+}
+
+@font-face {
+  font-family: "Hack";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("https://cdn.jsdelivr.net/npm/hack-font@3.3.0/build/web/fonts/hack-bold-subset.woff2")
+    format("woff2");
+}
 
 html[data-lang="en"] .lang-block[data-lang="ko"],
 html[data-lang="ko"] .lang-block[data-lang="en"] {
