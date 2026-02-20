@@ -60,7 +60,11 @@ export const defaultContentPageLayout: PageLayout = {
   ],
   right: [
     Component.DesktopOnly(Component.TableOfContents()),
-    Component.RecentNotes({ limit: 5, showTags: false }),
+    Component.RecentNotes({
+      limit: 5,
+      showTags: false,
+      filter: (f) => f.frontmatter?.["llm-generated"] !== true,
+    }),
     Component.Backlinks({ hideWhenEmpty: false }),
   ],
 }

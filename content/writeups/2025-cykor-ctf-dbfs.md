@@ -1,28 +1,29 @@
 ---
-title: dbfs
-title_ko: dbfs
+title: 2025-cykor-ctf-dbfs
+title_ko: 2025-cykor-ctf-dbfs
 lang: en
 draft: false
 date: 2026-02-18
 tags:
   - chroot-jail
   - stack-based-BOF
-description: "{{description}}"
-description_ko: "{{description_ko}}"
+  - writeup
+description: dbfs Write-Up
+description_ko: dbfs Write-Up
 ---
 [lang:ko]
 [여기](https://dreamhack.io/wargame/challenges/2511)에서 이 문제를 풀어보실 수 있습니다.
 
 # 핵심 아이디어
 
-1. PATH_MAX 보다 긴 path를 만들 수 있다.
+1. [[linux-kernel/path-max|PATH_MAX]] 보다 긴 path를 만들 수 있다.
    ref) https://insanecoding.blogspot.com/2007/11/pathmax-simply-isnt.html
-2. 빈 디렉토리로 chroot 를 했고, 임의 경로에 임의 내용을 쓸 수 있다.
+2. [[linux-kernel/chroot|chroot]] 를 빈 디렉토리로 했고, 임의 경로에 임의 내용을 쓸 수 있다.
    => 내가 원하는 /bin/sh 를 만들 수 있다.
 
 # 취약점
 
-1. 경로를 PATH_MAX 보다 길게 만들어서 BOF 를 트리거할 수 있다.
+1. 경로를 [[linux-kernel/path-max|PATH_MAX]] 보다 길게 만들어서 BOF 를 트리거할 수 있다.
 
    ```c
    void handle_info(const char *name)
@@ -91,8 +92,8 @@ description_ko: "{{description_ko}}"
 # Exploit 전략
 
 1. 취약점 \#2 를 이용해서 libc 주소를 얻는다.
-2. chroot jail을 탈출할 수 있도록 하는 `/bin/sh` 를 미리 만들어둔다.
-3. oneshot gadget을 사용하기는 힘들지만, 핵심 아이디어 \#2 를 염두에 두고 생각해보면 system 내부에 있는 `do_system ("exit 0")` 으로 RIP를 바꾸면 결국 `execve("/bin/sh", ["/bin/sh", "-c", "exit", "0"], environ)` 이 실행되어 chroot jail을 탈출 할 수 있다.
+2. [[linux-kernel/chroot|chroot]] jail을 탈출할 수 있도록 하는 `/bin/sh` 를 미리 만들어둔다.
+3. oneshot gadget을 사용하기는 힘들지만, 핵심 아이디어 \#2 를 염두에 두고 생각해보면 system 내부에 있는 `do_system ("exit 0")` 으로 RIP를 바꾸면 결국 `execve("/bin/sh", ["/bin/sh", "-c", "exit", "0"], environ)` 이 실행되어 [[linux-kernel/chroot|chroot]] jail을 탈출 할 수 있다.
 
    ```c
    int
@@ -220,14 +221,14 @@ You can try solving this challenge [here](https://dreamhack.io/wargame/challenge
 
 # Key Ideas
 
-1. It is possible to create a path longer than `PATH_MAX`.
+1. It is possible to create a path longer than [[linux-kernel/path-max|PATH_MAX]].
    ref) https://insanecoding.blogspot.com/2007/11/pathmax-simply-isnt.html
-2. The service performs `chroot` into an empty directory, and we can write arbitrary content to arbitrary paths.
+2. The service performs [[linux-kernel/chroot|chroot]] into an empty directory, and we can write arbitrary content to arbitrary paths.
    => We can create our own `/bin/sh`.
 
 # Vulnerabilities
 
-1. By building a path longer than `PATH_MAX`, we can trigger a BOF.
+1. By building a path longer than [[linux-kernel/path-max|PATH_MAX]], we can trigger a BOF.
 
    ```c
    void handle_info(const char *name)
@@ -296,8 +297,8 @@ You can try solving this challenge [here](https://dreamhack.io/wargame/challenge
 # Exploit Strategy
 
 1. Use vulnerability #2 to leak a libc address.
-2. Pre-create a `/bin/sh` binary that can escape the chroot jail.
-3. A one-shot gadget is hard to use here, but with key idea #2 in mind, we can redirect RIP to `do_system("exit 0")` inside `system`. This eventually runs `execve("/bin/sh", ["/bin/sh", "-c", "exit", "0"], environ)`, which allows us to break out of the chroot jail.
+2. Pre-create a `/bin/sh` binary that can escape the [[linux-kernel/chroot|chroot]] jail.
+3. A one-shot gadget is hard to use here, but with key idea #2 in mind, we can redirect RIP to `do_system("exit 0")` inside `system`. This eventually runs `execve("/bin/sh", ["/bin/sh", "-c", "exit", "0"], environ)`, which allows us to break out of the [[linux-kernel/chroot|chroot]] jail.
 
    ```c
    int

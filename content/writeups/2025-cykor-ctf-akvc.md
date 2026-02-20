@@ -1,22 +1,23 @@
 ---
-title: AKVC
-title_ko: AKVC
+title: 2025-cykor-ctf-akvc
+title_ko: 2025-cykor-ctf-akvc
 lang: en
 draft: false
 date: 2026-02-18
 tags:
   - linux-kernel
-description: "{{description}}"
-description_ko: "{{description_ko}}"
+  - writeup
+description: AKVC (Average Kernel VM Challenge) Write-Up
+description_ko: AKVC (Average Kernel VM Challenge) Write-Up
 ---
 [lang:ko]
 [여기](https://dreamhack.io/wargame/challenges/2512)에서 이 문제를 풀어보실 수 있습니다.
 
 # 핵심 아이디어
 
-1. pid는 재사용될 수 있다.
+1. [[linux-kernel/pid|pid]]는 재사용될 수 있다.
    ref) https://lwn.net/Articles/794707/
-2. 모든 프로세스에서 사용되는 vdso는 동일한 물리적 주소를 사용한다(Copy-on-Write 발생시 제외).
+2. [[linux-kernel/vdso|vdso]]는 모든 프로세스에서 동일한 물리적 주소를 사용한다(Copy-on-Write 발생시 제외).
 
 # 취약점
 
@@ -71,7 +72,7 @@ description_ko: "{{description_ko}}"
    }
    ```
 
-2. `vma->vm_file` 로 anonymous mapping인지 확인하지만, linux에서는 `vma->vm_ops` 를 이용해서 확인해야 한다.
+2. [[linux-kernel/vma|vma]]를 `vma->vm_file` 로 anonymous mapping인지 확인하지만, linux에서는 `vma->vm_ops` 를 이용해서 확인해야 한다.
 
    ```c
    static bool validate_vma(struct vm_area_struct *vma, u64 __user host_addr, size_t len)
@@ -480,9 +481,9 @@ You can try solving this challenge [here](https://dreamhack.io/wargame/challenge
 
 # Key Ideas
 
-1. A PID can be reused.
+1. [[linux-kernel/pid|pid]] can be reused.
    ref) https://lwn.net/Articles/794707/
-2. The vDSO used by all processes shares the same physical pages (except when Copy-on-Write occurs).
+2. [[linux-kernel/vdso|vdso]] used by all processes shares the same physical pages (except when Copy-on-Write occurs).
 
 # Vulnerabilities
 
@@ -537,7 +538,7 @@ You can try solving this challenge [here](https://dreamhack.io/wargame/challenge
    }
    ```
 
-2. It checks whether the mapping is anonymous by testing `vma->vm_file`, but on Linux this should be validated via `vma->vm_ops`.
+2. [[linux-kernel/vma|vma]] is checked as anonymous by testing `vma->vm_file`, but on Linux this should be validated via `vma->vm_ops`.
 
    ```c
    static bool validate_vma(struct vm_area_struct *vma, u64 __user host_addr, size_t len)
