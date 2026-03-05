@@ -9,7 +9,6 @@ tags:
 description: "{{description}}"
 description_ko: "{{description_ko}}"
 ---
-
 [lang:ko]
 
 # 한국어
