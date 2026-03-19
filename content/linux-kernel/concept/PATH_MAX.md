@@ -130,7 +130,7 @@ for (int i = 0; i < 1000; i++) {
 
 ## 컨테이너와 chroot
 
-[[linux-kernel/chroot|chroot]] jail이나 컨테이너 환경에서:
+[[chroot|chroot]] jail이나 컨테이너 환경에서:
 
 - 마운트 포인트 변경 시 경로 길이 계산 변함
 - 심볼릭 링크 추적 결과가 달라질 수 있음
@@ -262,7 +262,7 @@ Relying on `PATH_MAX` thus limits portability.
 
 ## Containers and chroot
 
-In [[linux-kernel/chroot|chroot]] jails or container environments:
+In [[chroot|chroot]] jails or container environments:
 
 - Mount point changes alter path length calculations
 - Symbolic link resolution outcomes differ

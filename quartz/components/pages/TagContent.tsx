@@ -1,7 +1,13 @@
 import { QuartzComponent, QuartzComponentConstructor, QuartzComponentProps } from "../types"
 import style from "../styles/listPage.scss"
 import { PageList, SortFn } from "../PageList"
-import { FullSlug, getAllSegmentPrefixes, resolveRelative, simplifySlug } from "../../util/path"
+import {
+  FullSlug,
+  getAllSegmentPrefixes,
+  resolveCanonical,
+  resolveRelative,
+  simplifySlug,
+} from "../../util/path"
 import { QuartzPluginData } from "../../plugins/vfile"
 import { Root } from "hast"
 import { htmlToJsx } from "../../util/jsx"
@@ -80,7 +86,11 @@ export default ((opts?: Partial<TagContentOptions>) => {
               return (
                 <div>
                   <h2>
-                    <a class="internal tag-link" href={href}>
+                    <a
+                      class="internal tag-link"
+                      href={href}
+                      data-canonical-href={resolveCanonical(tagListingPage)}
+                    >
                       {tag}
                     </a>
                   </h2>

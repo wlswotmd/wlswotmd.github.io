@@ -20,7 +20,7 @@ description_ko: "pidfd의 개념과 PID의 재사용 문제를 해결하는 메�
 # TL;DR
 
 - `pidfd`는 파일 디스크립터 기반의 프로세스 참조 메커니즘
-- [[linux-kernel/pid|PID]] 재사용 문제를 해결하고, 프로세스 생명 주기 동안 안정적으로 유효
+- [[pid|PID]] 재사용 문제를 해결하고, 프로세스 생명 주기 동안 안정적으로 유효
 - 권한 검사, 신호 전송, 대기(wait) 등 프로세스 관제에 사용 가능
 - Linux 5.3+ 지원
 
@@ -40,7 +40,7 @@ int pidfd_open(pid_t pid, unsigned int flags);
 
 ## PID의 문제
 
-[[linux-kernel/pid|PID]]는 유한한 자원이라 프로세스 종료 후 재사용됩니다:
+[[pid|PID]]는 유한한 자원이라 프로세스 종료 후 재사용됩니다:
 
 ```c
 // PID 재사용 취약성
@@ -110,7 +110,7 @@ pidfd_send_signal(pfd, SIGTERM, NULL, 0);
 - 일부 구형 함수(`waitpid()` 등)는 직접 pidfd 미지원 (`waitid()` 사용)
 
 ## proc 인터페이스
-- `procfs`는 여전히 [[linux-kernel/pid|PID]] 기반 (`/proc/[pid]/`)
+- `procfs`는 여전히 [[pid|PID]] 기반 (`/proc/[pid]/`)
 - `pidfd`로는 `/proc` 접근 불가 (다시 `pidfd_getfd()` 또는 유사 메커니즘 필요)
 
 ## 파일 디스크립터 누수
@@ -144,7 +144,7 @@ pidfd_send_signal(pfd, SIGTERM, NULL, 0);
 # TL;DR
 
 - `pidfd` is a file descriptor-based mechanism to reference a process stably
-- Solves [[linux-kernel/pid|PID]] reuse issues; remains valid throughout the process lifetime
+- Solves [[pid|PID]] reuse issues; remains valid throughout the process lifetime
 - Supports process control: authorization checks, signal delivery, waiting (waitid)
 - Available in Linux 5.3+
 
@@ -158,13 +158,13 @@ pidfd_send_signal(pfd, SIGTERM, NULL, 0);
 int pidfd_open(pid_t pid, unsigned int flags);
 ```
 
-- `pid`: target process [[linux-kernel/pid|PID]]
+- `pid`: target process [[pid|PID]]
 - `flags`: options like `PIDFD_NONBLOCK`
 - Returns: file descriptor (-1 on error)
 
 ## The PID problem
 
-[[linux-kernel/pid|PID]] is finite; IDs are reused after a process exits:
+[[pid|PID]] is finite; IDs are reused after a process exits:
 
 ```c
 // PID reuse vulnerability
@@ -234,7 +234,7 @@ pidfd_send_signal(pfd, SIGTERM, NULL, 0);
 - Some legacy functions (like `waitpid()`) do not directly support pidfd; use `waitid()` instead
 
 ## procfs interface
-- procfs still uses [[linux-kernel/pid|PID]]-based namespacing (`/proc/[pid]/`)
+- procfs still uses [[pid|PID]]-based namespacing (`/proc/[pid]/`)
 - pidfd cannot directly access `/proc` (need `pidfd_getfd()` or similar)
 
 ## File descriptor leaks
@@ -250,7 +250,7 @@ pidfd_send_signal(pfd, SIGTERM, NULL, 0);
 
 ## seccomp integration
 - Combine `PIDFD_NONBLOCK` flag with `poll()` for async monitoring
-- Enhanced security policies (prevents [[linux-kernel/pid|PID]] spoofing)
+- Enhanced security policies (prevents [[pid|PID]] spoofing)
 
 # References
 

@@ -23,7 +23,7 @@ export default ((userOpts?: Partial<SearchOptions>) => {
     const searchTitleKo = i18n("ko-KR").components.search.title
     return (
       <div class={classNames(displayClass, "search")}>
-        <button class="search-button">
+        <button class="search-button" type="button" aria-label={searchPlaceholder}>
           <svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7">
             <title>Search</title>
             <g class="search-path" fill="none">

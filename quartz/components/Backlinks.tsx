@@ -1,6 +1,6 @@
 import { QuartzComponent, QuartzComponentConstructor, QuartzComponentProps } from "./types"
 import style from "./styles/backlinks.scss"
-import { resolveRelative, simplifySlug } from "../util/path"
+import { resolveCanonical, resolveRelative, simplifySlug } from "../util/path"
 import { i18n } from "../i18n"
 import { classNames } from "../util/lang"
 import OverflowListFactory from "./OverflowList"
@@ -45,7 +45,11 @@ export default ((opts?: Partial<BacklinksOptions>) => {
           {backlinkFiles.length > 0 ? (
             backlinkFiles.map((f) => (
               <li>
-                <a href={resolveRelative(fileData.slug!, f.slug!)} class="internal">
+                <a
+                  href={resolveRelative(fileData.slug!, f.slug!)}
+                  class="internal"
+                  data-canonical-href={resolveCanonical(f.slug!)}
+                >
                   {f.frontmatter?.title_ko ? (
                     <>
                       <span class="lang-title" data-lang="en">

@@ -173,6 +173,11 @@ export function resolveRelative(current: FullSlug, target: FullSlug | SimpleSlug
   return res
 }
 
+export function resolveCanonical(target: FullSlug | SimpleSlug): string {
+  const simplified = simplifySlug(target as FullSlug)
+  return simplified === "/" ? "/" : `/${stripSlashes(simplified, true)}`
+}
+
 export function splitAnchor(link: string): [string, string] {
   let [fp, anchor] = link.split("#", 2)
   if (fp.endsWith(".pdf")) {

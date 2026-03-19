@@ -7,6 +7,7 @@ import {
   DefinitionContent,
   Paragraph,
   Code,
+  Image as MdImage,
 } from "mdast"
 import { Element, Literal, Root as HtmlRoot } from "hast"
 import { ReplaceFunction, findAndReplace as mdastFindReplace } from "mdast-util-find-and-replace"
@@ -147,9 +148,75 @@ const videoExtensionRegex = new RegExp(/\.(mp4|webm|ogg|avi|mov|flv|wmv|mkv|mpg|
 const wikilinkImageEmbedRegex = new RegExp(
   /^(?<alt>(?!^\d*x?\d*$).*?)?(\|?\s*?(?<width>\d+)(x(?<height>\d+))?)?$/,
 )
+const excalidrawFileRegex = /\.excalidraw(\.md)?$/i
+const excalidrawExportExtensions = [".svg", ".png"] as const
+
+function createImageNode(
+  url: string,
+  {
+    alt = "",
+    width,
+    height,
+  }: {
+    alt?: string
+    width?: string
+    height?: string
+  } = {},
+): MdImage {
+  return {
+    type: "image",
+    url,
+    alt,
+    data: {
+      hProperties: {
+        alt,
+        ...(width ? { width } : {}),
+        ...(height ? { height } : {}),
+      },
+    },
+  }
+}
+
+function createImageEmbedNode(url: string, alias?: string) {
+  const match = wikilinkImageEmbedRegex.exec(alias ?? "")
+  const alt = match?.groups?.alt ?? ""
+  const width = match?.groups?.width
+  const height = match?.groups?.height
+  return createImageNode(url, { alt, width, height })
+}
+
+function resolveExcalidrawExportPath(allFiles: string[], fp: string): string | null {
+  if (!excalidrawFileRegex.test(fp)) {
+    return null
+  }
+
+  const normalized = fp.replace(/\.md$/i, "")
+  const stripped = normalized.replace(/\.excalidraw$/i, "")
+  const candidates = new Set<string>()
+
+  for (const ext of excalidrawExportExtensions) {
+    candidates.add(`${normalized}${ext}`)
+    candidates.add(`${stripped}${ext}`)
+  }
+
+  for (const candidate of candidates) {
+    if (allFiles.includes(candidate)) {
+      return candidate
+    }
+
+    const basename = path.posix.basename(candidate)
+    const basenameMatches = allFiles.filter((file) => path.posix.basename(file) === basename)
+    if (basenameMatches.length === 1) {
+      return basenameMatches[0]
+    }
+  }
+
+  return null
+}
 
 export const ObsidianFlavoredMarkdown: QuartzTransformerPlugin<Partial<Options>> = (userOpts) => {
   const opts = { ...defaultOptions, ...userOpts }
+  const warnedMissingExcalidrawExports = new Set<string>()
 
   const mdastToHtml = (ast: PhrasingContent | Paragraph) => {
     const hast = toHast(ast, { allowDangerousHtml: true })!
@@ -214,6 +281,23 @@ export const ObsidianFlavoredMarkdown: QuartzTransformerPlugin<Partial<Options>>
       // regex replacements
       plugins.push(() => {
         return (tree: Root, file) => {
+          const currentFile = (file.data.relativePath ?? file.path ?? file.data.slug ?? "") as string
+          const excalidrawExport = resolveExcalidrawExportPath(ctx.allFiles, currentFile)
+          if (excalidrawExport) {
+            const alt =
+              (file.data.frontmatter?.title as string | undefined) ??
+              path.posix.basename(excalidrawExport).replace(/\.(svg|png)$/i, "")
+            tree.children = [createImageNode(excalidrawExport, { alt })]
+          } else if (excalidrawFileRegex.test(currentFile)) {
+            const warningKey = `${currentFile}::self`
+            if (!warnedMissingExcalidrawExports.has(warningKey)) {
+              warnedMissingExcalidrawExports.add(warningKey)
+              console.warn(
+                `Warning: couldn't find an exported SVG/PNG for Excalidraw file \`${currentFile}\`. Add a matching export (for example \`${currentFile.replace(/\.md$/i, ".svg")}\`).`,
+              )
+            }
+          }
+
           const replacements: [RegExp, string | ReplaceFunction][] = []
           const base = pathToRoot(file.data.slug!)
 
@@ -228,24 +312,23 @@ export const ObsidianFlavoredMarkdown: QuartzTransformerPlugin<Partial<Options>>
 
                 // embed cases
                 if (value.startsWith("!")) {
+                  const excalidrawExport = resolveExcalidrawExportPath(ctx.allFiles, fp)
+                  if (excalidrawExport) {
+                    return createImageEmbedNode(excalidrawExport, alias)
+                  } else if (excalidrawFileRegex.test(fp)) {
+                    const warningKey = `${currentFile}::${fp}`
+                    if (!warnedMissingExcalidrawExports.has(warningKey)) {
+                      warnedMissingExcalidrawExports.add(warningKey)
+                      console.warn(
+                        `Warning: couldn't find an exported SVG/PNG for embedded Excalidraw file \`${fp}\` referenced from \`${currentFile}\`. Add a matching export (for example \`${fp.replace(/\.md$/i, "")}.svg\`).`,
+                      )
+                    }
+                  }
+
                   const ext: string = path.extname(fp).toLowerCase()
                   const url = slugifyFilePath(fp as FilePath)
                   if ([".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg", ".webp"].includes(ext)) {
-                    const match = wikilinkImageEmbedRegex.exec(alias ?? "")
-                    const alt = match?.groups?.alt ?? ""
-                    const width = match?.groups?.width ?? "auto"
-                    const height = match?.groups?.height ?? "auto"
-                    return {
-                      type: "image",
-                      url,
-                      data: {
-                        hProperties: {
-                          width,
-                          height,
-                          alt,
-                        },
-                      },
-                    }
+                    return createImageEmbedNode(url, alias)
                   } else if ([".mp4", ".webm", ".ogv", ".mov", ".mkv"].includes(ext)) {
                     return {
                       type: "html",

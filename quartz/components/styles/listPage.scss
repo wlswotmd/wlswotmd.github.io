@@ -11,9 +11,24 @@ li.section-li {
 
   & > .section {
     display: grid;
-    grid-template-columns: fit-content(8em) 3fr 1fr;
+    grid-template-columns: minmax(8.5rem, max-content) minmax(0, 1fr) minmax(0, 18rem);
+    column-gap: 1rem;
+    align-items: start;
+
+    @media all and ($tablet) {
+      grid-template-columns: minmax(8.5rem, max-content) minmax(0, 1fr);
+
+      & > .tags {
+        grid-column: 2;
+        justify-content: flex-start;
+        margin-top: 0.55rem;
+      }
+    }
 
     @media all and ($mobile) {
+      grid-template-columns: minmax(7.5rem, max-content) minmax(0, 1fr);
+      column-gap: 0.75rem;
+
       & > .tags {
         display: none;
       }
@@ -26,6 +41,7 @@ li.section-li {
     & .meta {
       margin: 0 1em 0 0;
       opacity: 0.6;
+      white-space: nowrap;
     }
   }
 }

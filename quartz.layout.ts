@@ -1,6 +1,43 @@
 import { PageLayout, SharedLayout } from "./quartz/cfg"
 import * as Component from "./quartz/components"
 
+const mobileExplorerTools = (includeReaderMode: boolean) => [
+  Component.LanguageToggle(),
+  Component.Darkmode(),
+  ...(includeReaderMode ? [Component.ReaderMode()] : []),
+]
+
+const sidebarControls = (includeReaderMode: boolean) =>
+  Component.Flex({
+    components: [
+      {
+        Component: Component.Search(),
+        grow: true,
+      },
+      {
+        Component: Component.DesktopOnly(
+          Component.Flex({
+            components: [
+              { Component: Component.LanguageToggle() },
+              { Component: Component.Darkmode() },
+              ...(includeReaderMode ? [{ Component: Component.ReaderMode() }] : []),
+            ],
+            gap: "0.75rem",
+          }),
+        ),
+      },
+    ],
+    gap: "0.75rem",
+  })
+
+const leftSidebar = (includeReaderMode: boolean) => [
+  Component.PageTitle(),
+  sidebarControls(includeReaderMode),
+  Component.Explorer({
+    mobileTools: mobileExplorerTools(includeReaderMode),
+  }),
+]
+
 // components shared across all pages
 export const sharedPageComponents: SharedLayout = {
   head: Component.Head(),
@@ -42,22 +79,7 @@ export const defaultContentPageLayout: PageLayout = {
     Component.ContentMeta(),
     Component.TagList(),
   ],
-  left: [
-    Component.PageTitle(),
-    Component.MobileOnly(Component.Spacer()),
-    Component.Flex({
-      components: [
-        {
-          Component: Component.Search(),
-          grow: true,
-        },
-        { Component: Component.LanguageToggle() },
-        { Component: Component.Darkmode() },
-        { Component: Component.ReaderMode() },
-      ],
-    }),
-    Component.Explorer(),
-  ],
+  left: leftSidebar(true),
   right: [
     Component.DesktopOnly(Component.TableOfContents()),
     Component.RecentNotes({
@@ -72,20 +94,6 @@ export const defaultContentPageLayout: PageLayout = {
 // components for pages that display lists of pages  (e.g. tags or folders)
 export const defaultListPageLayout: PageLayout = {
   beforeBody: [Component.Breadcrumbs(), Component.ArticleTitle(), Component.ContentMeta()],
-  left: [
-    Component.PageTitle(),
-    Component.MobileOnly(Component.Spacer()),
-    Component.Flex({
-      components: [
-        {
-          Component: Component.Search(),
-          grow: true,
-        },
-        { Component: Component.LanguageToggle() },
-        { Component: Component.Darkmode() },
-      ],
-    }),
-    Component.Explorer(),
-  ],
+  left: leftSidebar(false),
   right: [],
 }

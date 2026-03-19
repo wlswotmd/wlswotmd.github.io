@@ -29,7 +29,7 @@ PID는 커널이 프로세스를 추적하기 위해 부여하는 식별자다. 
 - PID 재사용 타이밍은 정책과 시스템 상태에 따라 달라질 수 있다.
 
 # 주의사항
-- PID를 장기 신원으로 취급하지 말고 [[linux-kernel/pidfd|pidfd]]를 사용하라.
+- PID를 장기 신원으로 취급하지 말고 [[pidfd|pidfd]]를 사용하라.
 - PID 기반 캐시나 접근 제어는 재사용에 취약하다.
 
 # 참고
@@ -54,7 +54,7 @@ A PID is the kernel-assigned numeric identifier for a process. Because the PID s
 - Reuse timing depends on allocation policy and system state.
 
 # Pitfalls
-- Do not treat PID as a long-term identity; use [[linux-kernel/pidfd|pidfd]] instead.
+- Do not treat PID as a long-term identity; use [[pidfd|pidfd]] instead.
 - PID-based caches or access control can break under reuse.
 
 # References

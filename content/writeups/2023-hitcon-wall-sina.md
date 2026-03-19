@@ -7,11 +7,12 @@ date: 2026-02-20
 tags:
   - FSB
   - writeup
-description: "{{description}}"
-description_ko: "{{description_ko}}"
+description: wall sina writeup
+description_ko: wall sina writeup
 ---
 
 [lang:ko]
+
 # Write-Up
 
 FSB가 `main()` 내에서 발생하며 format string의 길이는 0x40 byte이다.
@@ -38,9 +39,9 @@ int main() {
 둘째, 스택을 가리키는 포인터를 사용하여 main의 return address를 덮을 방법을 찾았다. 하지만, main의 return address가 저장되는 곳은 ASLR에 의해 무작위로 변하기 때문에 1/4096 의 확률로만 작동가능헀다.
 
 > **Format String**: `%p%c%p%c%c%c%c%c%c%c%c%c%p%c%60131c%hn%281c%43$hhn`
-> 
+>
 > **FSB 트리거 전**: ptr1 → ptr2, 그리고 ptr2 → ???
-> 
+>
 > **FSB 트리거 후**: ptr1 → ptr2 (main의 return address를 가리킴), 그리고 ptr2 → (main의 return address). return address의 최하위 바이트를 0x31로 변경
 
 셋째, `leak + ret2main` 와 `1-byte write + ret2main`을 수행하는 payload를 작성했다. 첫 번째 payload를 사용하여 스택, libc 및 PIE 주소를 유출했고, 두 번째 payload를 사용하여 AAW(Arbitrary Address Write) primitive를 만들었다.
@@ -50,10 +51,12 @@ int main() {
 최종적으로, 반환 주소의 최하위 바이트를 0x4로 덮어써서 ROP 체인을 트리거했다.
 
 # 여담
+
 - 이 문제를 풀기 전에 유사한 문제에 대한 [write-up](https://ctftime.org/writeup/24611)를 읽어본 상태라 비교적 수월하게 풀 수 있었다.
 - 한국에서 유독 이런식으로 FSB를 이용해서 푸는 방법을 double staged FSB 라고 부르던데, 구글링을 하다보니 2012년(!)에 mongii라는 분이 이 기법을 만들고 pwn3r_45 선배가 이를 double staged FSB 라고 이름을 붙였다는 [글](https://pwn3r.tistory.com/entry/Docs-Double-Staged-Format-String-Attack)을 보게되었다. 난이도에 비해 생각보다 훨씬 오래된 기법이었다는 걸 알고 꽤나 충격을 받았다.
 
 # Exploit
+
 ```c
 #include <stdio.h>
 #include <stdlib.h>
@@ -280,9 +283,10 @@ int main() {
 
 [lang:en]
 
-> [!warning] This post was translated by an LLM. If you would like to read the original, please click the `한국어` button in the top-left corner.
+> [!warning] This post was translated by an LLM. If you would like to read the original, please click the globe icon in the top-left corner.
 
 # Write-Up
+
 FSB occurs within `main()` and length of format string is only 0x40 bytes.
 
 ```c
@@ -302,16 +306,16 @@ int main() {
 
 The bug is simple, but this challenge cannot be solved with a simple payload, since the format string is in the .bss section and we must escape from a chroot jail. (It means we cannot use easier ways. e.g. oneshot gadget)
 
-First, I put shellcode into the stack using an environment variable to escape from the chroot jail. 
+First, I put shellcode into the stack using an environment variable to escape from the chroot jail.
 
 Second, I found a way to return to main by using a pointer that points to the stack. Unfortunately, my solution only works with a probability of 1/4096 because I don't know where the return address of main is located.
 
 **Format String**: `%p%c%p%c%c%c%c%c%c%c%c%c%p%c%60131c%hn%281c%43$hhn`
 
-> **Before triggering FSB**: 
+> **Before triggering FSB**:
 > ptr1 ⇒ ptr2 && ptr2 ⇒ ???
-> 
-> **After triggering FSB**: 
+>
+> **After triggering FSB**:
 > ptr1 ⇒ ptr2 (points to return address of main)
 > ptr2 ⇒ (return address of main)
 
@@ -324,10 +328,12 @@ Fourth, I wrote an ROP chain that performs `mprotect(shellcode_addr, 0x2000, PRO
 Finally, the ROP chain was triggered by overwriting the least significant byte of the return address to 0x4.
 
 # Additional Notes
+
 - Before solving this problem, I had read a [write-up](https://ctftime.org/writeup/24611) on a similar problem, so I was able to solve it relatively smoothly.
 - In Korea, this method of solving the challenge using FSB is uniquely called "double staged FSB." When I searched on Google, I found an [article](https://pwn3r.tistory.com/entry/Docs-Double-Staged-Format-String-Attack) mentioning that `mongii` created this technique in 2012 (!), and `pwn3r_45`, a fellow alumnus, named it "double staged FSB." I was quite shocked to learn that despite its difficulty level, this is a much older technique than I thought.
 
 # Exploit
+
 ```c
 #include <stdio.h>
 #include <stdlib.h>

@@ -1,5 +1,5 @@
 import { FileTrieNode } from "../../util/fileTrie"
-import { FullSlug, resolveRelative, simplifySlug } from "../../util/path"
+import { FullSlug, resolveCanonical, simplifySlug } from "../../util/path"
 import { ContentDetails } from "../../plugins/emitters/contentIndex"
 
 type MaybeHTMLElement = HTMLElement | undefined
@@ -31,6 +31,10 @@ function withLangQuery(path: string): string {
   const url = new URL(path, window.location.toString())
   url.searchParams.set("hl", getPreferredLang())
   return `${url.pathname}${url.search}${url.hash}`
+}
+
+function isMobileViewport() {
+  return window.matchMedia("(max-width: 800px)").matches
 }
 
 function toggleExplorer(this: HTMLElement) {
@@ -97,7 +101,7 @@ function createFileNode(currentSlug: FullSlug, node: FileTrieNode): HTMLLIElemen
   const clone = template.content.cloneNode(true) as DocumentFragment
   const li = clone.querySelector("li") as HTMLLIElement
   const a = li.querySelector("a") as HTMLAnchorElement
-  a.href = withLangQuery(resolveRelative(currentSlug, node.slug))
+  a.href = withLangQuery(resolveCanonical(node.slug))
   a.dataset.for = node.slug
   a.textContent = node.displayName
 
@@ -112,6 +116,7 @@ function createFolderNode(
   currentSlug: FullSlug,
   node: FileTrieNode,
   opts: ParsedOptions,
+  isMobile: boolean,
 ): HTMLLIElement {
   const template = document.getElementById("template-folder") as HTMLTemplateElement
   const clone = template.content.cloneNode(true) as DocumentFragment
@@ -132,7 +137,7 @@ function createFolderNode(
     // Replace button with link for link behavior
     const button = titleContainer.querySelector(".folder-button") as HTMLElement
     const a = document.createElement("a")
-    a.href = withLangQuery(resolveRelative(currentSlug, folderPath))
+    a.href = withLangQuery(resolveCanonical(folderPath))
     a.dataset.for = folderPath
     a.className = "folder-title"
     a.textContent = node.displayName
@@ -153,13 +158,14 @@ function createFolderNode(
   const folderIsPrefixOfCurrentSlug =
     simpleFolderPath === currentSlug.slice(0, simpleFolderPath.length)
 
-  if (!isCollapsed || folderIsPrefixOfCurrentSlug) {
+  const shouldAutoExpand = !isMobile && folderIsPrefixOfCurrentSlug
+  if (!isCollapsed || shouldAutoExpand) {
     folderOuter.classList.add("open")
   }
 
   for (const child of node.children) {
     const childNode = child.isFolder
-      ? createFolderNode(currentSlug, child, opts)
+      ? createFolderNode(currentSlug, child, opts, isMobile)
       : createFileNode(currentSlug, child)
     ul.appendChild(childNode)
   }
@@ -171,6 +177,7 @@ async function setupExplorer(currentSlug: FullSlug) {
   const allExplorers = document.querySelectorAll("div.explorer") as NodeListOf<HTMLElement>
 
   for (const explorer of allExplorers) {
+    const isMobile = isMobileViewport()
     const dataFns = JSON.parse(explorer.dataset.dataFns || "{}")
     const opts: ParsedOptions = {
       folderClickBehavior: (explorer.dataset.behavior || "collapse") as "collapse" | "link",
@@ -184,7 +191,8 @@ async function setupExplorer(currentSlug: FullSlug) {
 
     // Get folder state from local storage
     const storageTree = localStorage.getItem("fileTree")
-    const serializedExplorerState = storageTree && opts.useSavedState ? JSON.parse(storageTree) : []
+    const serializedExplorerState =
+      storageTree && opts.useSavedState && !isMobile ? JSON.parse(storageTree) : []
     const oldIndex = new Map<string, boolean>(
       serializedExplorerState.map((entry: FolderState) => [entry.path, entry.collapsed]),
     )
@@ -227,16 +235,23 @@ async function setupExplorer(currentSlug: FullSlug) {
     const explorerUl = explorer.querySelector(".explorer-ul")
     if (!explorerUl) continue
 
+    const overflowEnd = explorerUl.querySelector(".overflow-end")
+    for (const child of Array.from(explorerUl.children)) {
+      if (child !== overflowEnd) {
+        child.remove()
+      }
+    }
+
     // Create and insert new content
     const fragment = document.createDocumentFragment()
     for (const child of trie.children) {
       const node = child.isFolder
-        ? createFolderNode(currentSlug, child, opts)
+        ? createFolderNode(currentSlug, child, opts, isMobile)
         : createFileNode(currentSlug, child)
 
       fragment.appendChild(node)
     }
-    explorerUl.insertBefore(fragment, explorerUl.firstChild)
+    explorerUl.insertBefore(fragment, overflowEnd)
 
     // restore explorer scrollTop position if it exists
     const scrollTop = sessionStorage.getItem("explorerScrollTop")

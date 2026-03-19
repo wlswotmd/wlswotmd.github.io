@@ -36,7 +36,7 @@ Provide as many of these as possible:
 
 If target is English, use:
 
-> [!warning] This post was translated by an LLM. If you would like to read the original, please click the `한국어` button in the top-left corner.
+> [!warning] This post was translated by an LLM. If you would like to read the original, please click the globe icon in the top-left corner.
 
 If target is Korean, use:
 

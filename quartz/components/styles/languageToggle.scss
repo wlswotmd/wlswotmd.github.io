@@ -1,26 +1,28 @@
 .language-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: inline-grid;
+  place-items: center;
   height: 32px;
-  min-width: 3rem;
-  padding: 0 8px;
-  border: 1px solid var(--lightgray);
-  border-radius: 6px;
+  width: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
   background: transparent;
   color: var(--darkgray);
-  font-size: 0.85rem;
   line-height: 1;
   text-decoration: none;
-  white-space: nowrap;
   transition:
     background 0.1s ease,
     color 0.1s ease,
     border-color 0.1s ease;
 }
 
+.language-toggle .languageIcon {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
 .language-toggle:hover {
-  background: var(--lightgray);
+  background: transparent;
   color: var(--dark);
-  border-color: var(--gray);
 }

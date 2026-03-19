@@ -13,6 +13,7 @@ type OrderEntries = "sort" | "filter" | "map"
 
 export interface Options {
   title?: string
+  mobileTools: QuartzComponent[]
   folderDefaultState: "collapsed" | "open"
   folderClickBehavior: "collapse" | "link"
   useSavedState: boolean
@@ -23,6 +24,7 @@ export interface Options {
 }
 
 const defaultOptions: Options = {
+  mobileTools: [],
   folderDefaultState: "collapsed",
   folderClickBehavior: "link",
   useSavedState: true,
@@ -60,7 +62,8 @@ export default ((userOpts?: Partial<Options>) => {
   const opts: Options = { ...defaultOptions, ...userOpts }
   const { OverflowList, overflowListAfterDOMLoaded } = OverflowListFactory()
 
-  const Explorer: QuartzComponent = ({ displayClass }: QuartzComponentProps) => {
+  const Explorer: QuartzComponent = (props: QuartzComponentProps) => {
+    const { displayClass } = props
     const explorerTitleEn = i18n("en-US").components.explorer.title
     const explorerTitleKo = i18n("ko-KR").components.explorer.title
     const id = `explorer-${numExplorers++}`
@@ -134,6 +137,13 @@ export default ((userOpts?: Partial<Options>) => {
           </svg>
         </button>
         <div id={id} class="explorer-content" aria-expanded={false} role="group">
+          {opts.mobileTools.length > 0 && (
+            <div class="mobile-tools">
+              {opts.mobileTools.map((Tool, index) => (
+                <Tool {...props} key={index} />
+              ))}
+            </div>
+          )}
           <OverflowList class="explorer-ul" />
         </div>
         <template id="template-file">
@@ -173,7 +183,14 @@ export default ((userOpts?: Partial<Options>) => {
     )
   }
 
-  Explorer.css = style
-  Explorer.afterDOMLoaded = concatenateResources(script, overflowListAfterDOMLoaded)
+  Explorer.beforeDOMLoaded = concatenateResources(
+    ...opts.mobileTools.map((tool) => tool.beforeDOMLoaded),
+  )
+  Explorer.afterDOMLoaded = concatenateResources(
+    script,
+    overflowListAfterDOMLoaded,
+    ...opts.mobileTools.map((tool) => tool.afterDOMLoaded),
+  )
+  Explorer.css = concatenateResources(style, ...opts.mobileTools.map((tool) => tool.css))
   return Explorer
-}) satisfies QuartzComponentConstructor
+}) satisfies QuartzComponentConstructor<Partial<Options>>

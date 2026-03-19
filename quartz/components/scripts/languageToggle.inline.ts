@@ -275,7 +275,10 @@ const updateLanguage = () => {
     const toggle = el as HTMLAnchorElement
     const labelEn = toggle.dataset.labelEn ?? "English"
     const labelKo = toggle.dataset.labelKo ?? "한국어"
-    toggle.textContent = other === "en" ? labelEn : labelKo
+    const nextLabel = other === "en" ? labelEn : labelKo
+    const title = `Switch to ${nextLabel}`
+    toggle.setAttribute("aria-label", title)
+    toggle.setAttribute("title", title)
 
     const url = new URL(window.location.href)
     url.searchParams.set("hl", other)
@@ -302,7 +305,7 @@ const updateLanguage = () => {
 
   for (const el of document.getElementsByClassName("internal")) {
     const link = el as HTMLAnchorElement
-    const raw = link.getAttribute("href")
+    const raw = link.dataset.canonicalHref ?? link.getAttribute("href")
     if (!raw || raw.startsWith("http")) continue
     const url = new URL(raw, window.location.href)
     url.searchParams.set("hl", desired)

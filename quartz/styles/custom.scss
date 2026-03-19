@@ -19,6 +19,13 @@
     format("woff2");
 }
 
+:root {
+  --titleFont: "Hack", "Noto Sans CJK KR", "Noto Sans KR", sans-serif;
+  --headerFont: "Hack", "Noto Sans CJK KR", "Noto Sans KR", sans-serif;
+  --bodyFont: "Hack", "Noto Sans CJK KR", "Noto Sans KR", sans-serif;
+  --codeFont: "Hack", "Noto Sans Mono CJK KR", "Noto Sans CJK KR", "Noto Sans KR", monospace;
+}
+
 html[data-lang="en"] .lang-block[data-lang="ko"],
 html[data-lang="ko"] .lang-block[data-lang="en"] {
   display: none;
